@@ -5,7 +5,7 @@ library(udpipe)
 ###DATA INGESTION###
 
 #Read the CSV file into a data frame
-subjects <- read.csv("presentation-subjects.csv")
+subjects <- read.csv("subjects.csv")
 
 #Read the LCSH column as a JSON body in order to create an accessible list
 subjects$LCSH <- lapply(subjects$LCSH, fromJSON)
@@ -26,16 +26,16 @@ subjects <- subjects %>%
 #Create a column with the LC class
 subjects <- subjects %>% mutate(CLASS = str_extract(LCC, regex("^[[:alpha:]]+")))
 
+###DATA ORGANIZATION###
+
+#Create a new data table with a column with the count of headings in the list in LCSH
+subjects_group <- subjects %>% rowwise() %>% mutate(Headings = length(LCSH))
+
 #Create a new data table to show unlisted LCSH; break headings into individual columns for sorting
 subjects_ind <- unnest(subjects_group, LCSH)
 subjects_ind <- subjects_ind %>% mutate(Subs = str_count(subjects_ind$LCSH, "\\$"))
 subjects_ind <- subjects_ind %>% 
   separate("LCSH", c("Old", "Primary", "Sub1", "Sub2", "Sub3"), sep = "\\$") %>% filter(grepl("^a[A-Z]", Primary)) 
-
-###DATA ORGANIZATION###
-
-#Create a new data table with a column with the count of headings in the list in LCSH
-subjects_group <- subjects %>% rowwise() %>% mutate(Headings = length(LCSH))
 
 #Remove periods from all LCSH columns
 sub_cols <- c("Primary", "Sub1", "Sub2", "Sub3")
